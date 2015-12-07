@@ -22,18 +22,24 @@
 # SOFTWARE.
 import Adafruit_DHT
 import time
+import influxdb
 
 # Sensor should be set to Adafruit_DHT.DHT11,
 # Adafruit_DHT.DHT22, or Adafruit_DHT.AM2302.
 sensor = Adafruit_DHT.DHT11
 
-# Example using a Beaglebone Black with DHT sensor
-# connected to pin P8_11.
-
-# Example using a Raspberry Pi with DHT sensor
-# connected to GPIO23.
 pin = 17
 
+client=influxdb.influxDBClient("docker.trollitehdas.fi",8086,"root","root","homemonitor")
+data=[
+    {
+        "measurement": "livingroom_weather",
+        "fields": {
+            "temperature": 0.0,
+            "humidity" : 0.0 
+        }
+    }
+]
 while True:
 	# Try to grab a sensor reading.  Use the read_retry method which will retry up
 	# to 15 times to get a sensor reading (waiting 2 seconds between each retry).
@@ -44,7 +50,10 @@ while True:
 	# guarantee the timing of calls to read the sensor).  
 	# If this happens try again!
 	if humidity is not None and temperature is not None:
-		print 'Temp={0:0.1f}*C  Humidity={1:0.1f}%'.format(temperature, humidity)
+	    fields=data["fields"]
+	    fields["temperature"]=temperature
+	    fields["humidity"]=humidity
+		client.write_points(data)
 	else:
 		print 'Failed to get reading. Try again!'
 	time.sleep(60)
