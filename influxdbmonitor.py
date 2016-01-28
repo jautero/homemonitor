@@ -40,6 +40,9 @@ data=[
         }
     }
 ]
+def log(message):
+    print(time.asctime(),message)
+    
 while True:
 	# Try to grab a sensor reading.  Use the read_retry method which will retry up
 	# to 15 times to get a sensor reading (waiting 2 seconds between each retry).
@@ -53,7 +56,10 @@ while True:
 	    fields=data["fields"]
 	    fields["temperature"]=temperature
 	    fields["humidity"]=humidity
-		client.write_points(data)
+	    try:
+		    client.write_points(data)
+		expect Exception e:
+		    log(str(e))
 	else:
 		print 'Failed to get reading. Try again!'
 	time.sleep(60)
