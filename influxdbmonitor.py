@@ -30,7 +30,7 @@ sensor = Adafruit_DHT.DHT11
 
 pin = 17
 
-client=influxdb.influxDBClient("docker.trollitehdas.fi",8086,"root","root","homemonitor")
+client=influxdb.InfluxDBClient("docker.trollitehdas.fi",8086,"root","root","homemonitor")
 data=[
     {
         "measurement": "livingroom_weather",
@@ -40,9 +40,6 @@ data=[
         }
     }
 ]
-def log(message):
-    print(time.asctime(),message)
-    
 while True:
 	# Try to grab a sensor reading.  Use the read_retry method which will retry up
 	# to 15 times to get a sensor reading (waiting 2 seconds between each retry).
@@ -53,13 +50,10 @@ while True:
 	# guarantee the timing of calls to read the sensor).  
 	# If this happens try again!
 	if humidity is not None and temperature is not None:
-	    fields=data["fields"]
+	    fields=data[0]["fields"]
 	    fields["temperature"]=temperature
 	    fields["humidity"]=humidity
-	    try:
-		    client.write_points(data)
-		expect Exception e:
-		    log(str(e))
+	    client.write_points(data)
 	else:
-		print 'Failed to get reading. Try again!'
+	    print 'Failed to get reading. Try again!'
 	time.sleep(60)
