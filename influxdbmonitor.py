@@ -24,6 +24,8 @@
 import Adafruit_DHT
 import time
 import influxdb
+import telepot
+from teleconf import APIKEY
 
 # Sensor should be set to Adafruit_DHT.DHT11,
 # Adafruit_DHT.DHT22, or Adafruit_DHT.AM2302.
@@ -34,7 +36,7 @@ fail_timestamp=0
 fail_message=""
 
 client=influxdb.InfluxDBClient("docker.trollitehdas.fi",8086,"root","root","homemonitor")
-
+bot=telepot.Bot(APIKEY)
 
 def get_weather_dict(temp,hum):
     return {"measurement": "livingroom_weather",
@@ -47,6 +49,18 @@ def get_error_dict():
                 "message": fail_message,
                 "duration": time.time()-fail_timestamp
             }}
+
+def handle(msg):
+    chat_id=msg['from']['id']
+    command=msg['text']
+    if command == '/temperature' and temperature is not None:
+        bot.sendMessage(chat_id,temperature)
+    if command == '/humidity' and humidity is not None:
+        bot.sendMessage(chat_id,humidity)
+    if xommand == '/ping':
+        bot.sendMessage(chat_if,"PONG")
+
+bot.notifyMessage(handle)
 
 while True:
     try:
