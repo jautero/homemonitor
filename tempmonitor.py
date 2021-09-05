@@ -21,6 +21,7 @@ config_msgs=[
     ("homeassistant/sensor/humidity/config",'{"device_class": "humidity", "name": "indoor humidity", "state_topic": "homeassistant/sensor/humidity/state", "unit_of_measurement": "%"}',0,False),
     ("homeassistant/sensor/outdoor/config",'{"device_class": "temperature", "name": "outdoor temperature", "state_topic": "homeassistant/sensor/outdoor/state", "unit_of_measurement": "°C"}',0,False)]
 
+publish.multiple(config_msgs, hostname="homeassistant.local", auth=auth)
 
 try:
     while True:
