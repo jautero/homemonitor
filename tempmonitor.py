@@ -1,50 +1,42 @@
-#!/usr/bin/python
+# Based on example.py in dht11
 
-# Copyright (c) 2014 Adafruit Industries
-# Author: Tony DiCola
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-import Adafruit_DHT
+import RPi.GPIO as GPIO
+import dht11
+import w1thermsensor
 import time
+import datetime
+import paho.mqtt.publish as publish
 
-# Sensor should be set to Adafruit_DHT.DHT11,
-# Adafruit_DHT.DHT22, or Adafruit_DHT.AM2302.
-sensor = Adafruit_DHT.DHT11
+# initialize GPIO
+GPIO.setwarnings(True)
+GPIO.setmode(GPIO.BCM)
 
-# Example using a Beaglebone Black with DHT sensor
-# connected to pin P8_11.
+# read data using pin 17
+indoortemp = dht11.DHT11(pin=17)
+outdoortemp = w1thermsensor.W1ThermSensor()
+auth={'username':'mqtt','password':'mqtt'}
 
-# Example using a Raspberry Pi with DHT sensor
-# connected to GPIO23.
-pin = 17
+config_msgs=[
+    ("homeassistant/sensor/indoor/config",'{"device_class": "temperature", "name": "indoor temperature", "state_topic": "homeassistant/sensor/indoor/state", "unit_of_measurement": "°C"}',0,False),
+    ("homeassistant/sensor/humidity/config",'{"device_class": "humidity", "name": "indoor humidity", "state_topic": "homeassistant/sensor/humidity/state", "unit_of_measurement": "%"}',0,False),
+    ("homeassistant/sensor/outdoor/config",'{"device_class": "temperature", "name": "outdoor temperature", "state_topic": "homeassistant/sensor/outdoor/state", "unit_of_measurement": "°C"}',0,False)]
 
-while True:
-	# Try to grab a sensor reading.  Use the read_retry method which will retry up
-	# to 15 times to get a sensor reading (waiting 2 seconds between each retry).
-	humidity, temperature = Adafruit_DHT.read_retry(sensor, pin)
 
-	# Note that sometimes you won't get a reading and
-	# the results will be null (because Linux can't
-	# guarantee the timing of calls to read the sensor).  
-	# If this happens try again!
-	if humidity is not None and temperature is not None:
-		print 'Temp={0:0.1f}*C  Humidity={1:0.1f}%'.format(temperature, humidity)
-	else:
-		print 'Failed to get reading. Try again!'
-	time.sleep(60)
+try:
+    while True:
+        result = indoortemp.read()
+        outresult = outdoortemp.get_temperature()
+        if result.is_valid():
+            print("Last valid input: " + str(datetime.datetime.now()))
+            print("Temperature: %-3.1f C" % result.temperature)
+            publish.single("homeassistant/sensor/indoor/state", result.temperature, hostname="homeassistant.local", auth=auth)
+            print("Humidity: %-3.1f %%" % result.humidity)
+            publish.single("homeassistant/sensor/humidity/state", result.humidity, hostname="homeassistant.local", auth=auth)
+            print("Outdoors: %-3.1f C" % outresult)
+            publish.single("homeassistant/sensor/outdoor/state", outresult, hostname="homeassistant.local", auth=auth)
+
+        time.sleep(6)
+
+except KeyboardInterrupt:
+    print("Cleanup")
+    GPIO.cleanup()
