@@ -36,7 +36,7 @@ try:
             print("Outdoors: %-3.1f C" % outresult)
             publish.single("homeassistant/sensor/outdoor/state", outresult, hostname="homeassistant.local", auth=auth)
 
-        time.sleep(6)
+        time.sleep(60) # Sleep one minute
 
 except KeyboardInterrupt:
     print("Cleanup")
