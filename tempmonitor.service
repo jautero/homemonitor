@@ -1,0 +1,10 @@
+[Unit]
+Description=MQTT Temperature monitor
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/pi/tempmonitor.py
+
+[Install]
+WantedBy=multi-user.target
