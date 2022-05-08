@@ -26,9 +26,15 @@ def on_message(client, userdata, msg):
     if msg.topic == "homeassistant/sensor/restart/state":
         do_configuration=True
 
+def on_disconnect(client, userdata, rc):
+    if rc != 0:
+        client.reconnect()
+
+
 client=mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
+client.on_disconnext = on_disconnect
 
 client.username_pw_set(auth['username'],auth['password'])
 client.connect("homeassistant.local")
@@ -46,7 +52,6 @@ try:
             for msg in config_msgs:
                 client.publish(*msg)
             do_configuration=False
-            
         result = indoortemp.read()
         outresult = outdoortemp.get_temperature()
         if result.is_valid():
